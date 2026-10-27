@@ -96,6 +96,18 @@ no account, no server. Your scripts never leave your computer.
 All other features (timer, highlighter, sliders, fullscreen, local
 storage) work identically across all popular browsers.
 
+
+## Preview
+<img width="683" height="313" alt="SSS" src="https://github.com/user-attachments/assets/c17dd16e-21ab-43ef-90f4-64cd5f345935" />
+<p>Preview 1</p>
+<p></p>
+<img width="683" height="313" alt="ss3" src="https://github.com/user-attachments/assets/a7d40f47-f147-41aa-80a9-2d9f77e5b7b2" />
+<p>Preview 2</p>
+<p></p>
+<img width="640" height="360" alt="SS2" src="https://github.com/user-attachments/assets/20ba483f-674b-4a99-bb09-3c276fd9af84" />
+<p>Preview 3</p>
+
+
 ## Credit
 <p>Fuzh Rosso<p>
 Developed by Gemini & Deepseek
