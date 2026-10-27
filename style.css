@@ -1,0 +1,440 @@
+/* ============================================================
+   RESET & GLOBAL
+   ============================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* --- GitHub Dark palette (padanan self.colors di Python) --- */
+  --bg-main:              #0d1117;
+  --bg-panel:             #161b22;
+  --border:               #30363d;
+  --border-strong:        #444c56;
+  --text:                 #c9d1d9;
+  --text-muted:           #8b949e;
+  --btn-primary:          #238636;
+  --btn-primary-hover:    #2ea043;
+  --btn-secondary:        #21262d;
+  --btn-secondary-hover:  #30363d;
+  --btn-danger:           #da3633;
+  --btn-danger-hover:     #b62324;
+  --accent:               #58a6ff;
+
+  /* --- Dynamic values (di-update via JS) --- */
+  --font-size:             36px;
+  --margin-x:              100px;
+  --margin-y:              50px;
+  --prompter-text-color:   #c9d1d9;
+  --prompter-bg-color:     #0d1117;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  font-size: 14px;
+  background: var(--bg-main);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ============================================================
+   CONTROL PANEL
+   ============================================================ */
+#controlPanel {
+  flex-shrink: 0;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 15px;
+}
+
+.separator {
+  height: 1px;
+  background: var(--border);
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 8px;
+}
+
+.control-label {
+  color: var(--text-muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.push-right {
+  margin-left: auto;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1;
+  padding: 7px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--text);
+  background: var(--btn-secondary);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn:hover {
+  background: var(--btn-secondary-hover);
+  border-color: var(--border-strong);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.btn-primary {
+  background: var(--btn-primary);
+  color: #ffffff;
+  border-color: rgba(240, 246, 252, 0.1);
+}
+.btn-primary:hover {
+  background: var(--btn-primary-hover);
+}
+
+.btn-danger {
+  background: var(--btn-danger);
+  color: #ffffff;
+  border-color: rgba(240, 246, 252, 0.1);
+}
+.btn-danger:hover {
+  background: var(--btn-danger-hover);
+}
+
+.btn-play {
+  min-width: 140px;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.btn-tiny {
+  padding: 4px 9px;
+  min-width: 30px;
+  justify-content: center;
+}
+
+.color-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid var(--border-strong);
+  background: var(--prompter-text-color);
+}
+
+/* ============================================================
+   FORM CONTROLS (dropdown, spinbox, slider)
+   ============================================================ */
+.dropdown {
+  font-family: inherit;
+  font-size: 13px;
+  min-width: 250px;
+  max-width: 350px;
+  padding: 6px 8px;
+  background: var(--bg-main);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.dropdown:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.spin-input {
+  font-family: inherit;
+  font-size: 13px;
+  width: 60px;
+  padding: 6px 8px;
+  background: var(--bg-main);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-align: center;
+}
+.spin-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.speed-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 30px;
+  text-align: center;
+}
+
+/* ---- Range slider (Chrome / Edge / Safari) ---- */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 90px;
+  height: 6px;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.slider::-webkit-slider-thumb:hover {
+  background: var(--text);
+}
+
+/* ---- Range slider (Firefox) ---- */
+.slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 50%;
+  background: var(--text-muted);
+  cursor: pointer;
+}
+.slider::-moz-range-thumb:hover {
+  background: var(--text);
+}
+.slider::-moz-range-track {
+  height: 6px;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+/* ============================================================
+   PROMPTER SCREEN
+   ============================================================ */
+#prompterScreen {
+  flex: 1;
+  min-height: 0;                 /* penting: agar overflow bekerja di flex column */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--margin-y) var(--margin-x);
+  background: var(--prompter-bg-color);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+#prompterScreen::-webkit-scrollbar       { width: 8px; }
+#prompterScreen::-webkit-scrollbar-track { background: transparent; }
+#prompterScreen::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+#prompterScreen::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+#prompterText {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: var(--font-size);
+  line-height: 1.45;
+  text-align: center;
+  color: var(--prompter-text-color);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* ============================================================
+   COUNTDOWN OVERLAY
+   ============================================================ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 17, 23, 0.85);
+  z-index: 100;
+  pointer-events: none;
+}
+.overlay.hidden { display: none; }
+
+#countdownNumber {
+  font-size: 160px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--btn-danger);
+  text-shadow: 0 0 40px rgba(218, 54, 51, 0.45);
+  animation: countdown-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes countdown-pulse {
+  0%, 100% { transform: scale(1);    opacity: 1;   }
+  50%      { transform: scale(1.08); opacity: 0.85; }
+}
+
+/* ============================================================
+   MODAL (Edit Script)
+   ============================================================ */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 200;
+  padding: 20px;
+}
+.modal.hidden { display: none; }
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  width: min(680px, 100%);
+  height: min(560px, 100%);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.modal-textarea {
+  flex: 1;
+  margin: 15px;
+  padding: 12px;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  background: var(--bg-main);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  resize: none;
+  outline: none;
+}
+.modal-textarea:focus {
+  border-color: var(--accent);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 15px 15px;
+}
+
+/* ============================================================
+   TOAST NOTIFICATION
+   ============================================================ */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%) translateY(20px);
+  max-width: 90vw;
+  padding: 12px 20px;
+  background: var(--bg-panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  font-size: 13px;
+  z-index: 300;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+}
+.toast.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ============================================================
+   FULLSCREEN MODE (class ditoggle oleh JS)
+   ============================================================ */
+#app.fullscreen #controlPanel {
+  display: none;
+}
+
+#app.fullscreen #prompterScreen {
+  padding: var(--margin-y) var(--margin-x);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1000px) {
+  .dropdown      { min-width: 160px; max-width: 220px; }
+  .slider        { width: 70px; }
+}
+
+@media (max-width: 720px) {
+  .control-row   { gap: 4px; padding: 8px 10px; }
+  .btn           { padding: 6px 9px; font-size: 12px; }
+  .dropdown      { min-width: 120px; }
+  .slider        { width: 55px; }
+  .btn-play      { min-width: 110px; }
+  #countdownNumber { font-size: 100px; }
+}

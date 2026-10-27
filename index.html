@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ease Prompter — Web Edition">
+  <title>Ease Prompter</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ============================================
+       APP SHELL (control panel + prompter screen)
+       ============================================ -->
+  <div id="app">
+
+    <!-- ---------- CONTROL PANEL ---------- -->
+    <header id="controlPanel">
+
+      <!-- Row 1: File & Script Management -->
+      <div class="control-row">
+        <button type="button" id="btnSelectLibrary" class="btn btn-secondary">
+          📂 Select Library
+        </button>
+
+        <label for="scriptDropdown" class="control-label">Script:</label>
+        <select id="scriptDropdown" class="dropdown">
+          <option value="">— No scripts loaded —</option>
+        </select>
+
+        <button type="button" id="btnEdit"   class="btn btn-secondary">✎ Edit</button>
+        <button type="button" id="btnRemove" class="btn btn-secondary">🗑 Remove</button>
+
+        <button type="button" id="btnFullscreen" class="btn btn-secondary push-right">
+          🖵 Fullscreen
+        </button>
+      </div>
+
+      <div class="separator"></div>
+
+      <!-- Row 2: Prompter Controls -->
+      <div class="control-row">
+        <button type="button" id="btnPlay" class="btn btn-primary btn-play">
+          ▶ Play (Space)
+        </button>
+
+        <label for="delayInput" class="control-label">Delay (s):</label>
+        <input type="number" id="delayInput" class="spin-input"
+               value="3" min="1" max="60" step="1">
+        <button type="button" id="btnStartDelay" class="btn btn-secondary">⏳ Start</button>
+
+        <button type="button" id="btnReset" class="btn btn-secondary">↺ Reset</button>
+
+        <div class="divider"></div>
+
+        <label class="control-label">Speed:</label>
+        <button type="button" id="btnSpeedMinus" class="btn btn-secondary btn-tiny">−</button>
+        <span   id="speedLabel" class="speed-label">30</span>
+        <button type="button" id="btnSpeedPlus"  class="btn btn-secondary btn-tiny">+</button>
+
+        <div class="divider"></div>
+
+        <label for="fontSlider" class="control-label">Size:</label>
+        <input type="range" id="fontSlider" class="slider" min="15" max="120" value="36">
+
+        <span class="control-label" aria-hidden="true">↔</span>
+        <input type="range" id="marginXSlider" class="slider" min="0" max="450" value="100">
+
+        <span class="control-label" aria-hidden="true">↕</span>
+        <input type="range" id="marginYSlider" class="slider" min="0" max="300" value="50">
+
+        <button type="button" id="btnColor" class="btn btn-secondary push-right">
+          🎨 Color <span id="colorSwatch" class="color-swatch"></span>
+        </button>
+        <input type="color" id="colorPicker" value="#c9d1d9" hidden>
+      </div>
+
+    </header>
+
+    <!-- ---------- PROMPTER SCREEN ---------- -->
+    <main id="prompterScreen">
+      <div id="prompterText"></div>
+    </main>
+
+  </div><!-- /#app -->
+
+  <!-- ============================================
+       OVERLAYS & MODALS (di luar #app, fixed position)
+       ============================================ -->
+
+  <!-- Countdown overlay -->
+  <div id="countdownOverlay" class="overlay hidden" aria-hidden="true">
+    <span id="countdownNumber">3</span>
+  </div>
+
+  <!-- Edit Script modal -->
+  <div id="editModal" class="modal hidden" role="dialog" aria-modal="true"
+       aria-labelledby="modalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Edit Script</h2>
+      </div>
+      <textarea id="editTextarea" class="modal-textarea" spellcheck="false"></textarea>
+      <div class="modal-footer">
+        <button type="button" id="btnCancelEdit" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="btnSaveEdit"   class="btn btn-primary">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Hidden folder input — fallback untuk browser tanpa File System Access API -->
+  <input type="file" id="folderInput"
+         webkitdirectory directory multiple accept=".txt" hidden>
+
+  <script src="app.js"></script>
+</body>
+</html>
