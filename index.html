@@ -9,19 +9,20 @@
 </head>
 <body>
 
-  <!-- ============================================
-       APP SHELL (control panel + prompter screen)
-       ============================================ -->
   <div id="app">
 
     <!-- ---------- CONTROL PANEL ---------- -->
     <header id="controlPanel">
 
       <!-- Row 1: File & Script Management -->
-      <div class="control-row">
-        <button type="button" id="btnSelectLibrary" class="btn btn-secondary">
-          📂 Select Library
-        </button>
+		<div class="control-row">
+
+		<!-- === NEW: App logo === -->
+		<img id="appLogo" src="assets/Logo_Ease_Prompter.png" alt="Ease Prompter" draggable="false">
+
+		<button type="button" id="btnSelectLibrary" class="btn btn-secondary">
+		📂 Select Library
+		</button>
 
         <label for="scriptDropdown" class="control-label">Script:</label>
         <select id="scriptDropdown" class="dropdown">
@@ -69,7 +70,16 @@
         <span class="control-label" aria-hidden="true">↕</span>
         <input type="range" id="marginYSlider" class="slider" min="0" max="300" value="50">
 
-        <button type="button" id="btnColor" class="btn btn-secondary push-right">
+        <!-- === NEW: Highlight toggle (kiri tombol Color) === -->
+        <button type="button" id="btnHighlight"
+                class="btn btn-secondary push-right"
+                aria-pressed="false"
+                title="Toggle center highlighter (spotlight)">
+          🎯 Highlight
+        </button>
+
+        <!-- === CHANGED: push-right dihapus (sudah pindah ke btnHighlight) === -->
+        <button type="button" id="btnColor" class="btn btn-secondary">
           🎨 Color <span id="colorSwatch" class="color-swatch"></span>
         </button>
         <input type="color" id="colorPicker" value="#c9d1d9" hidden>
@@ -77,23 +87,33 @@
 
     </header>
 
-    <!-- ---------- PROMPTER SCREEN ---------- -->
-    <main id="prompterScreen">
-      <div id="prompterText"></div>
+    <!-- === CHANGED: Prompter viewport wrapper (fixed layer + scroll layer) === -->
+    <main id="prompterViewport">
+
+      <!-- Layer scrollable: teks berjalan -->
+      <div id="prompterScreen">
+        <div id="prompterText"></div>
+      </div>
+
+      <!-- === NEW: Timer HH:MM:SS pojok kanan atas === -->
+      <div id="timerDisplay" role="timer" aria-live="off">00:00:00</div>
+
+      <!-- === NEW: Highlighter (spotlight band di tengah) === -->
+      <div id="highlighter" aria-hidden="true">
+        <div class="highlighter-mask highlighter-top"></div>
+        <div class="highlighter-mask highlighter-bottom"></div>
+        <div class="highlighter-band"></div>
+      </div>
+
     </main>
 
-  </div><!-- /#app -->
+  </div>
 
-  <!-- ============================================
-       OVERLAYS & MODALS (di luar #app, fixed position)
-       ============================================ -->
-
-  <!-- Countdown overlay -->
+  <!-- Overlays & modals (di luar #app) -->
   <div id="countdownOverlay" class="overlay hidden" aria-hidden="true">
     <span id="countdownNumber">3</span>
   </div>
 
-  <!-- Edit Script modal -->
   <div id="editModal" class="modal hidden" role="dialog" aria-modal="true"
        aria-labelledby="modalTitle">
     <div class="modal-content">
@@ -108,10 +128,8 @@
     </div>
   </div>
 
-  <!-- Toast notification -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- Hidden folder input — fallback untuk browser tanpa File System Access API -->
   <input type="file" id="folderInput"
          webkitdirectory directory multiple accept=".txt" hidden>
 
