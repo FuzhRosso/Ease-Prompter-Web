@@ -103,7 +103,7 @@ body {
 /* === NEW: App logo di control panel === */
 #appLogo {
   height: 50px;              /* tinggi tetap, ukuran natural di bar */
-  width: 130px;               /* lebar mengikuti rasio asli */
+  width: Auto;               /* lebar mengikuti rasio asli */
   max-width: 200px;          /* cegah logo landscape jadi kepanjangan */
   object-fit: contain;       /* kalau max-width kena, tetap proporsional */
   flex-shrink: 0;            /* jangan mengecil saat row wrap */
