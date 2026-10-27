@@ -1,6 +1,14 @@
 <p><img width="1735" height="637" alt="Logo_Ease_Prompter" src="https://github.com/user-attachments/assets/e6ea7e5e-a7fe-4c67-b39d-1aadb4564b6c" /></p>
 
+<p></p> 
+<p><div style="text-align: center">=============>
+<a href="https://fuzhrosso.github.io/Ease-Prompter-Web" class="btn btn-primary">(Easy) Try Here</a> <================
+</div></p>
+<p></p>
 
+
+
+  
 # Ease Prompter (Web Based) 🎬
 
 <p>Ease Prompter — A lightweight, browser-based teleprompter with speed control, adjustable text size & margins, HH:MM:SS timer, and a center-spotlight highlighter. No installation, no backend, runs entirely in your browser.
