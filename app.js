@@ -1,6 +1,6 @@
 /* =============================================================
  * Ease Prompter — Web Edition
- * Port langsung dari ease_prompter_dark.py (Tkinter → DOM)
+ * Port dari ease_prompter_dark.py + Timer + Highlighter
  * ============================================================= */
 (() => {
   'use strict';
@@ -8,41 +8,49 @@
   /* -----------------------------------------------------------
    * KONSTANTA
    * ----------------------------------------------------------- */
-  const CONFIG_KEY   = 'easePrompter.config';   // localStorage
-  const IDB_NAME     = 'easePrompterDB';        // IndexedDB
-  const IDB_VERSION  = 1;
-  const STORE_SCRIPTS = 'scripts';              // cache isi skrip
-  const STORE_META    = 'meta';                 // folder handle
+  const CONFIG_KEY     = 'easePrompter.config';
+  const IDB_NAME       = 'easePrompterDB';
+  const IDB_VERSION    = 1;
+  const STORE_SCRIPTS  = 'scripts';
+  const STORE_META     = 'meta';
 
   const $ = (id) => document.getElementById(id);
 
   /* -----------------------------------------------------------
-   * STATE (padanan semua self.* di Python)
+   * STATE
    * ----------------------------------------------------------- */
   const state = {
-    isPlaying:       false,
-    isFullscreen:    false,
-    scrollSpeed:     30,          // ms delay per pixel (rendah = cepat)
-    fontSize:        36,
-    textColor:       '#c9d1d9',
-    marginX:         100,
-    marginY:         50,
-    scripts:         {},          // { title: { content } }
-    currentScript:   '',
-    lastFolderName:  '',
-    folderHandle:    null,
-    rafId:           null,
-    lastFrameTime:   0,
-    scrollAccum:     0,
-    countdownTimer:  null,
-    editingScript:   null,
-    db:              null,
+    isPlaying:        false,
+    isFullscreen:     false,
+    scrollSpeed:      30,
+    fontSize:         36,
+    textColor:        '#c9d1d9',
+    marginX:          100,
+    marginY:          50,
+    scripts:          {},
+    currentScript:    '',
+    lastFolderName:   '',
+    folderHandle:     null,
+    rafId:            null,
+    lastFrameTime:    0,
+    scrollAccum:      0,
+    countdownTimer:   null,
+    editingScript:    null,
+    db:               null,
+
+    // === NEW: Timer ===
+    elapsedMs:        0,       // total terakumulasi saat pause
+    timerStartedAt:   0,       // performance.now() saat mulai play
+    timerRafId:       null,
+
+    // === NEW: Highlighter ===
+    isHighlight:      false,
   };
 
-  let dom = {};   // referensi DOM, diisi saat init
+  let dom = {};
 
   /* =============================================================
-   * INDEXEDDB (padanan AppData config_prompter.json)
+   * INDEXEDDB
    * ============================================================= */
   function openDB() {
     if (state.db) return Promise.resolve(state.db);
@@ -57,7 +65,6 @@
       req.onerror   = () => reject(req.error);
     });
   }
-
   async function idbPut(store, key, value) {
     const db = await openDB();
     return new Promise((res, rej) => {
@@ -105,7 +112,7 @@
   }
 
   /* =============================================================
-   * KONFIGURASI (padanan load_config / save_config)
+   * KONFIGURASI
    * ============================================================= */
   function loadConfig() {
     try { return JSON.parse(localStorage.getItem(CONFIG_KEY)) || {}; }
@@ -115,14 +122,15 @@
   function saveConfig() {
     try {
       localStorage.setItem(CONFIG_KEY, JSON.stringify({
-        lastFolder: state.lastFolderName,
-        lastScript: state.currentScript,
+        lastFolder:   state.lastFolderName,
+        lastScript:   state.currentScript,
+        isHighlight:  state.isHighlight,   // === NEW ===
       }));
     } catch (e) { console.warn('saveConfig failed', e); }
   }
 
   /* =============================================================
-   * CACHE SKRIP (pengganti re-scan folder Python)
+   * CACHE SKRIP
    * ============================================================= */
   async function persistScripts() {
     try {
@@ -143,7 +151,7 @@
   }
 
   /* =============================================================
-   * TOAST (pengganti messagebox)
+   * TOAST
    * ============================================================= */
   let toastTimer = null;
   function showToast(msg, ms = 3000) {
@@ -154,6 +162,74 @@
       dom.toast.classList.remove('show');
       toastTimer = null;
     }, ms);
+  }
+
+  /* =============================================================
+   * === NEW: TIMER ===
+   * Akumulasi elapsed selama playing; freeze saat pause; reset
+   * bersama resetScroll.
+   * ============================================================= */
+  function formatHMS(ms) {
+    const totalSec = Math.floor(ms / 1000);
+    const h   = Math.floor(totalSec / 3600);
+    const m   = Math.floor((totalSec % 3600) / 60);
+    const s   = totalSec % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }
+
+  function renderTimer() {
+    const total = state.elapsedMs +
+      (state.isPlaying && state.timerStartedAt
+        ? performance.now() - state.timerStartedAt
+        : 0);
+    dom.timerDisplay.textContent = formatHMS(total);
+  }
+
+  function startTimerLoop() {
+    if (state.timerRafId) return;             // idempoten
+    state.timerStartedAt = performance.now();
+    state.timerRafId = requestAnimationFrame(timerLoop);
+  }
+
+  function stopTimerLoop() {
+    if (state.timerRafId) {
+      cancelAnimationFrame(state.timerRafId);
+      state.timerRafId = null;
+    }
+    if (state.timerStartedAt) {
+      state.elapsedMs += performance.now() - state.timerStartedAt;
+      state.timerStartedAt = 0;
+    }
+    renderTimer();                            // pastikan label sinkron
+  }
+
+  function timerLoop(now) {
+    if (!state.isPlaying) return;
+    const total = state.elapsedMs + (now - state.timerStartedAt);
+    dom.timerDisplay.textContent = formatHMS(total);
+    state.timerRafId = requestAnimationFrame(timerLoop);
+  }
+
+  function resetTimer() {
+    state.elapsedMs = 0;
+    state.timerStartedAt = state.isPlaying ? performance.now() : 0;
+    dom.timerDisplay.textContent = '00:00:00';
+  }
+
+  /* =============================================================
+   * === NEW: HIGHLIGHTER ===
+   * ============================================================= */
+  function setHighlight(on) {
+    state.isHighlight = !!on;
+    dom.highlighter.classList.toggle('visible', state.isHighlight);
+    dom.btnHighlight.classList.toggle('btn-active', state.isHighlight);
+    dom.btnHighlight.setAttribute('aria-pressed', String(state.isHighlight));
+  }
+
+  function toggleHighlight() {
+    setHighlight(!state.isHighlight);
+    saveConfig();
   }
 
   /* =============================================================
@@ -183,7 +259,7 @@
     state.currentScript = title;
     const content = state.scripts[title].content;
     dom.prompterText.textContent = `--- ${title} ---\n\n${content}\n\n[ END ]`;
-    resetScroll();
+    resetScroll();          // reset scroll + timer
     saveConfig();
     document.activeElement?.blur();
   }
@@ -206,7 +282,6 @@
   async function selectLibrary() {
     pausePrompter();
 
-    // Chrome / Edge: File System Access API
     if (typeof window.showDirectoryPicker === 'function') {
       let dir;
       try {
@@ -215,7 +290,6 @@
         if (e.name !== 'AbortError') console.error(e);
         return;
       }
-
       try {
         const loaded = {};
         let count = 0;
@@ -244,7 +318,6 @@
       return;
     }
 
-    // Fallback: <input webkitdirectory>
     dom.folderInput.click();
   }
 
@@ -341,24 +414,28 @@
       dom.btnPlay.textContent = '⏸ Pause (Space)';
       dom.btnPlay.classList.remove('btn-primary');
       dom.btnPlay.classList.add('btn-danger');
+
+      dom.prompterViewport.classList.add('is-playing');     // === NEW ===
+
       state.lastFrameTime = performance.now();
       state.scrollAccum  = 0;
       state.rafId = requestAnimationFrame(scrollLoop);
+      startTimerLoop();                                     // === NEW ===
     } else {
       dom.btnPlay.textContent = '▶ Play (Space)';
       dom.btnPlay.classList.remove('btn-danger');
       dom.btnPlay.classList.add('btn-primary');
+
+      dom.prompterViewport.classList.remove('is-playing');  // === NEW ===
+
       if (state.rafId) {
         cancelAnimationFrame(state.rafId);
         state.rafId = null;
       }
+      stopTimerLoop();                                      // === NEW ===
     }
   }
 
-  /**
-   * Padanan auto_scroll + after(scroll_speed).
-   * Python: 1 px per scroll_speed ms. Di sini: akumulasi dt/scrollSpeed.
-   */
   function scrollLoop(timestamp) {
     if (!state.isPlaying) return;
     const dt = Math.min(Math.max(timestamp - state.lastFrameTime, 0), 100);
@@ -375,6 +452,7 @@
 
   function resetScroll() {
     dom.prompterScreen.scrollTop = 0;
+    resetTimer();                                           // === NEW ===
   }
 
   /* =============================================================
@@ -413,7 +491,6 @@
         remaining--;
         if (remaining > 0) {
           dom.countdownNumber.textContent = String(remaining);
-          // restart pulse animation
           dom.countdownNumber.style.animation = 'none';
           void dom.countdownNumber.offsetWidth;
           dom.countdownNumber.style.animation = '';
@@ -454,7 +531,6 @@
    * SPEED / SLIDER / COLOR
    * ============================================================= */
   function changeSpeed(delta) {
-    // Persis Python: nilai = delay ms. "+" -> delta negatif (lebih cepat).
     if (state.scrollSpeed + delta > 0) {
       state.scrollSpeed += delta;
       dom.speedLabel.textContent = String(state.scrollSpeed);
@@ -500,39 +576,42 @@
    * INIT
    * ============================================================= */
   async function init() {
-    /* --- Cache DOM refs --- */
     dom = {
-      app:             $('app'),
-      controlPanel:    $('controlPanel'),
-      prompterScreen:  $('prompterScreen'),
-      prompterText:    $('prompterText'),
-      btnSelectLibrary:$('btnSelectLibrary'),
-      scriptDropdown:  $('scriptDropdown'),
-      btnEdit:         $('btnEdit'),
-      btnRemove:       $('btnRemove'),
-      btnFullscreen:   $('btnFullscreen'),
-      btnPlay:         $('btnPlay'),
-      delayInput:      $('delayInput'),
-      btnStartDelay:   $('btnStartDelay'),
-      btnReset:        $('btnReset'),
-      btnSpeedMinus:   $('btnSpeedMinus'),
-      btnSpeedPlus:    $('btnSpeedPlus'),
-      speedLabel:      $('speedLabel'),
-      fontSlider:      $('fontSlider'),
-      marginXSlider:   $('marginXSlider'),
-      marginYSlider:   $('marginYSlider'),
-      btnColor:        $('btnColor'),
-      colorPicker:     $('colorPicker'),
-      colorSwatch:     $('colorSwatch'),
-      countdownOverlay:$('countdownOverlay'),
-      countdownNumber: $('countdownNumber'),
-      editModal:       $('editModal'),
-      modalTitle:      $('modalTitle'),
-      editTextarea:    $('editTextarea'),
-      btnCancelEdit:   $('btnCancelEdit'),
-      btnSaveEdit:     $('btnSaveEdit'),
-      toast:           $('toast'),
-      folderInput:     $('folderInput'),
+      app:              $('app'),
+      controlPanel:     $('controlPanel'),
+      prompterViewport: $('prompterViewport'),   // === NEW ===
+      prompterScreen:   $('prompterScreen'),
+      prompterText:     $('prompterText'),
+      timerDisplay:     $('timerDisplay'),       // === NEW ===
+      highlighter:      $('highlighter'),        // === NEW ===
+      btnHighlight:     $('btnHighlight'),       // === NEW ===
+      btnSelectLibrary: $('btnSelectLibrary'),
+      scriptDropdown:   $('scriptDropdown'),
+      btnEdit:          $('btnEdit'),
+      btnRemove:        $('btnRemove'),
+      btnFullscreen:    $('btnFullscreen'),
+      btnPlay:          $('btnPlay'),
+      delayInput:       $('delayInput'),
+      btnStartDelay:    $('btnStartDelay'),
+      btnReset:         $('btnReset'),
+      btnSpeedMinus:    $('btnSpeedMinus'),
+      btnSpeedPlus:     $('btnSpeedPlus'),
+      speedLabel:       $('speedLabel'),
+      fontSlider:       $('fontSlider'),
+      marginXSlider:    $('marginXSlider'),
+      marginYSlider:    $('marginYSlider'),
+      btnColor:         $('btnColor'),
+      colorPicker:      $('colorPicker'),
+      colorSwatch:      $('colorSwatch'),
+      countdownOverlay: $('countdownOverlay'),
+      countdownNumber:  $('countdownNumber'),
+      editModal:        $('editModal'),
+      modalTitle:       $('modalTitle'),
+      editTextarea:     $('editTextarea'),
+      btnCancelEdit:    $('btnCancelEdit'),
+      btnSaveEdit:      $('btnSaveEdit'),
+      toast:            $('toast'),
+      folderInput:      $('folderInput'),
     };
 
     /* --- Event listeners --- */
@@ -544,8 +623,8 @@
     dom.btnPlay.addEventListener('click', () => { document.activeElement?.blur(); togglePlay(); });
     dom.btnStartDelay.addEventListener('click', startDelay);
     dom.btnReset.addEventListener('click', resetScroll);
+    dom.btnHighlight.addEventListener('click', toggleHighlight);       // === NEW ===
 
-    // Padanan Python: "-" -> +5 (lambat), "+" -> -5 (cepat)
     dom.btnSpeedMinus.addEventListener('click', () => changeSpeed(5));
     dom.btnSpeedPlus .addEventListener('click', () => changeSpeed(-5));
 
@@ -556,11 +635,11 @@
     dom.btnSaveEdit  .addEventListener('click', saveEdit);
     dom.folderInput  .addEventListener('change', handleFolderInput);
 
-    // Sliders
     dom.fontSlider.addEventListener('input', (e) => {
       const v = parseInt(e.target.value, 10);
       state.fontSize = v;
       document.documentElement.style.setProperty('--font-size', `${v}px`);
+      // --highlighter-height pakai calc(var(--font-size)), jadi otomatis ikut
     });
     dom.marginXSlider.addEventListener('input', (e) => {
       const v = parseInt(e.target.value, 10);
@@ -573,10 +652,8 @@
       document.documentElement.style.setProperty('--margin-y', `${v}px`);
     });
 
-    // Keyboard global
     document.addEventListener('keydown', handleKeydown);
 
-    // Sinkronisasi saat user keluar fullscreen lewat OS/browser
     document.addEventListener('fullscreenchange', () => {
       if (!document.fullscreenElement && state.isFullscreen) {
         dom.app.classList.remove('fullscreen');
@@ -594,11 +671,14 @@
     document.documentElement.style.setProperty('--margin-x', `${state.marginX}px`);
     document.documentElement.style.setProperty('--margin-y', `${state.marginY}px`);
 
+    // Timer & highlight baseline
+    dom.timerDisplay.textContent = '00:00:00';
+    setHighlight(false);
+
     /* --- Restore state --- */
     const cfg = loadConfig();
     await restoreScripts();
 
-    // Skrip default (padanan self.scripts = { "User Guide": ... })
     if (Object.keys(state.scripts).length === 0) {
       state.scripts = {
         'User Guide': {
@@ -624,7 +704,10 @@
       loadScript(pick);
     }
 
-    /* --- Restore folder handle (silent re-scan bila permission granted) --- */
+    // === NEW: restore highlight preference ===
+    if (cfg.isHighlight) setHighlight(true);
+
+    /* --- Restore folder handle --- */
     if (cfg.lastFolder) {
       state.lastFolderName = cfg.lastFolder;
       try {
@@ -660,6 +743,9 @@
         }
       } catch (e) { /* silent */ }
     }
+
+    // Sinkron ulang setelah semua async selesai
+    dom.timerDisplay.textContent = '00:00:00';
   }
 
   document.addEventListener('DOMContentLoaded', init);

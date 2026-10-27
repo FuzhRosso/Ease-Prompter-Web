@@ -10,7 +10,6 @@
 }
 
 :root {
-  /* --- GitHub Dark palette (padanan self.colors di Python) --- */
   --bg-main:              #0d1117;
   --bg-panel:             #161b22;
   --border:               #30363d;
@@ -31,6 +30,13 @@
   --margin-y:              50px;
   --prompter-text-color:   #c9d1d9;
   --prompter-bg-color:     #0d1117;
+
+  /* === NEW: Highlighter tuning === */
+  --highlighter-height:    calc(var(--font-size) * 1.6 + 24px);
+  --highlighter-mask:      rgba(13, 17, 23, 0.9);
+  --highlighter-mask-fade: 48px;
+  --highlighter-accent:    rgba(88, 166, 255, 0.22);
+  --highlighter-tint:      rgba(88, 166, 255, 0.07);
 }
 
 html, body {
@@ -94,6 +100,20 @@ body {
   margin-left: auto;
 }
 
+/* === NEW: App logo di control panel === */
+#appLogo {
+  height: 50px;              /* tinggi tetap, ukuran natural di bar */
+  width: 130px;               /* lebar mengikuti rasio asli */
+  max-width: 200px;          /* cegah logo landscape jadi kepanjangan */
+  object-fit: contain;       /* kalau max-width kena, tetap proporsional */
+  flex-shrink: 0;            /* jangan mengecil saat row wrap */
+  user-select: none;
+  -webkit-user-drag: none;   /* cegah logo di-drag */
+  margin-right: 10px;        /* jarak ke tombol Select Library */
+  /* Optional: sedikit shadow halus supaya "pop" di panel gelap */
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.08));
+}
+
 /* ============================================================
    BUTTONS
    ============================================================ */
@@ -111,7 +131,7 @@ body {
   white-space: nowrap;
   color: var(--text);
   background: var(--btn-secondary);
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .btn:hover {
@@ -146,6 +166,17 @@ body {
   background: var(--btn-danger-hover);
 }
 
+/* === NEW: state "on" untuk tombol toggle (Highlight) === */
+.btn.btn-active {
+  background: var(--accent);
+  color: #0d1117;
+  border-color: var(--accent);
+}
+.btn.btn-active:hover {
+  background: #79b8ff;
+  border-color: #79b8ff;
+}
+
 .btn-play {
   min-width: 140px;
   justify-content: center;
@@ -168,7 +199,7 @@ body {
 }
 
 /* ============================================================
-   FORM CONTROLS (dropdown, spinbox, slider)
+   FORM CONTROLS
    ============================================================ */
 .dropdown {
   font-family: inherit;
@@ -182,10 +213,7 @@ body {
   border-radius: 6px;
   cursor: pointer;
 }
-.dropdown:focus {
-  outline: none;
-  border-color: var(--accent);
-}
+.dropdown:focus { outline: none; border-color: var(--accent); }
 
 .spin-input {
   font-family: inherit;
@@ -198,10 +226,7 @@ body {
   border-radius: 6px;
   text-align: center;
 }
-.spin-input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
+.spin-input:focus { outline: none; border-color: var(--accent); }
 
 .speed-label {
   font-size: 14px;
@@ -211,7 +236,6 @@ body {
   text-align: center;
 }
 
-/* ---- Range slider (Chrome / Edge / Safari) ---- */
 .slider {
   -webkit-appearance: none;
   appearance: none;
@@ -233,11 +257,8 @@ body {
   cursor: pointer;
   transition: background 0.15s;
 }
-.slider::-webkit-slider-thumb:hover {
-  background: var(--text);
-}
+.slider::-webkit-slider-thumb:hover { background: var(--text); }
 
-/* ---- Range slider (Firefox) ---- */
 .slider::-moz-range-thumb {
   width: 14px;
   height: 14px;
@@ -246,9 +267,7 @@ body {
   background: var(--text-muted);
   cursor: pointer;
 }
-.slider::-moz-range-thumb:hover {
-  background: var(--text);
-}
+.slider::-moz-range-thumb:hover { background: var(--text); }
 .slider::-moz-range-track {
   height: 6px;
   background: var(--bg-main);
@@ -257,11 +276,20 @@ body {
 }
 
 /* ============================================================
-   PROMPTER SCREEN
+   PROMPTER VIEWPORT (=== CHANGED: wrapper + fixed layers) ===
    ============================================================ */
-#prompterScreen {
+#prompterViewport {
+  position: relative;
   flex: 1;
-  min-height: 0;                 /* penting: agar overflow bekerja di flex column */
+  min-height: 0;
+  background: var(--prompter-bg-color);
+  overflow: hidden;
+}
+
+/* Layer scrollable: teks berjalan (di dalam viewport, absolute fill) */
+#prompterScreen {
+  position: absolute;
+  inset: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--margin-y) var(--margin-x);
@@ -290,6 +318,94 @@ body {
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow-wrap: break-word;
+}
+
+/* ============================================================
+   === NEW: TIMER (pojok kanan atas area teks) ===
+   ============================================================ */
+#timerDisplay {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  z-index: 20;
+  font-family: "Cascadia Code", "Consolas", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+  padding: 5px 10px;
+  color: var(--text-muted);
+  background: rgba(13, 17, 23, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  pointer-events: none;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+/* Saat sedang play, warna timer sedikit lebih terang */
+#prompterViewport.is-playing #timerDisplay {
+  color: var(--accent);
+}
+
+/* ============================================================
+   === NEW: HIGHLIGHTER (spotlight band di tengah) ===
+   ============================================================ */
+#highlighter {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  display: none;
+}
+#highlighter.visible { display: block; }
+
+.highlighter-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+/* Mask atas: menggelapkan teks yang sudah berlalu (dengan fade ke arah band) */
+.highlighter-top {
+  top: 0;
+  height: calc(50% - var(--highlighter-height) / 2);
+  background: linear-gradient(
+    to bottom,
+    var(--highlighter-mask) 0%,
+    var(--highlighter-mask) calc(100% - var(--highlighter-mask-fade)),
+    transparent 100%
+  );
+}
+
+/* Mask bawah: menggelapkan teks yang belum dibaca */
+.highlighter-bottom {
+  bottom: 0;
+  height: calc(50% - var(--highlighter-height) / 2);
+  background: linear-gradient(
+    to top,
+    var(--highlighter-mask) 0%,
+    var(--highlighter-mask) calc(100% - var(--highlighter-mask-fade)),
+    transparent 100%
+  );
+}
+
+/* Band tengah: sedikit tint accent + garis tipis atas/bawah sebagai "marker" */
+.highlighter-band {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: var(--highlighter-height);
+  transform: translateY(-50%);
+  border-top: 1px solid var(--highlighter-accent);
+  border-bottom: 1px solid var(--highlighter-accent);
+  background: linear-gradient(
+    to bottom,
+    rgba(88, 166, 255, 0.02) 0%,
+    var(--highlighter-tint) 50%,
+    rgba(88, 166, 255, 0.02) 100%
+  );
 }
 
 /* ============================================================
@@ -373,9 +489,7 @@ body {
   resize: none;
   outline: none;
 }
-.modal-textarea:focus {
-  border-color: var(--accent);
-}
+.modal-textarea:focus { border-color: var(--accent); }
 
 .modal-footer {
   display: flex;
@@ -385,7 +499,7 @@ body {
 }
 
 /* ============================================================
-   TOAST NOTIFICATION
+   TOAST
    ============================================================ */
 .toast {
   position: fixed;
@@ -412,29 +526,31 @@ body {
 }
 
 /* ============================================================
-   FULLSCREEN MODE (class ditoggle oleh JS)
+   FULLSCREEN
    ============================================================ */
 #app.fullscreen #controlPanel {
   display: none;
-}
-
-#app.fullscreen #prompterScreen {
-  padding: var(--margin-y) var(--margin-x);
 }
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 1000px) {
-  .dropdown      { min-width: 160px; max-width: 220px; }
-  .slider        { width: 70px; }
+  .dropdown { min-width: 160px; max-width: 220px; }
+  .slider   { width: 70px; }
 }
 
 @media (max-width: 720px) {
-  .control-row   { gap: 4px; padding: 8px 10px; }
-  .btn           { padding: 6px 9px; font-size: 12px; }
-  .dropdown      { min-width: 120px; }
-  .slider        { width: 55px; }
-  .btn-play      { min-width: 110px; }
+  .control-row     { gap: 4px; padding: 8px 10px; }
+  .btn             { padding: 6px 9px; font-size: 12px; }
+  .dropdown        { min-width: 120px; }
+  .slider          { width: 55px; }
+  .btn-play        { min-width: 110px; }
   #countdownNumber { font-size: 100px; }
+  #timerDisplay    { font-size: 12px; padding: 4px 8px; }
+}
+
+@media (max-width: 720px) {
+  /* ... yang sudah ada ... */
+  #appLogo { height: 26px; max-width: 100px; margin-right: 6px; }
 }
